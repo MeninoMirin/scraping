@@ -5,8 +5,11 @@ app = Flask(__name__)
 
 @app.route('/')
 def index():
-    resultados = scrape.execute_scraping()
-    return render_template('index.html', resultados=resultados)
+    try:
+        resultados = scrape.execute_scraping()
+        return render_template('index.html', resultados=resultados)
+    except Exception as e:
+        return str(e)  # Exibir o erro no navegador (para depuração)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=8080)
