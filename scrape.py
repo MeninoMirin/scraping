@@ -1,53 +1,49 @@
+import os
+import json
+import firebase_admin
+from firebase_admin import credentials
+from firebase_admin import db
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
+from webdriver_manager.chrome import ChromeDriverManager
+from flask import Flask, jsonify
 from time import sleep
 
-def verificar_estrategia(lista):
-    for numero in lista[:4]:
-        if numero >= 2:
-            return False
-    return True
+app = Flask(__name__)
 
-def execute_scraping():
+# Obter credenciais do Firebase a partir das variáveis de ambiente
+firebase_creds = json.loads(os.environ.get('FIREBASE_CREDS', '{}'))
+
+cred = credentials.Certificate(firebase_creds)
+firebase_admin.initialize_app(cred, {
+    'databaseURL': 'https://banco-8c10d-default-rtdb.firebaseio.com/'
+})
+
+@app.route('/')
+def index():
     options = Options()
-    options.add_argument('--headless')  # Execute o Chrome em modo headless
+    options.add_argument('--headless')  # Executa o navegador em modo headless
     options.add_argument('--disable-logging')
-    options.add_argument("--no-sandbox")
-    options.add_argument("--disable-dev-shm-usage")
-
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+    options.add_argument('--no-sandbox')
+    options.add_argument('--disable-dev-shm-usage')
 
     try:
+        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
         driver.get('https://estrelabet.com/ptb/bet/main')
         sleep(10)
-        driver.refresh()
-        WebDriverWait(driver, 30).until(
-            EC.presence_of_element_located((By.XPATH, '//*[@id="cookies-bottom-modal"]/div/div[1]/a'))
-        )
-        sleep(10)
-        driver.find_element(By.XPATH, '//*[@id="cookies-bottom-modal"]/div/div[1]/a').click()
-        sleep(3)
-        driver.find_element(By.XPATH, '//*[@id="username"]').send_keys('mario@tmpeml.com')
-        driver.find_element(By.XPATH, '//*[@id="password-login"]').send_keys('Aviator102030!')
-        sleep(3)
-        driver.find_element(By.XPATH, '//*[@id="header"]/div/div[1]/div/div[2]/app-login/form/div/div/div[2]/button').click()
-        sleep(5)
-        driver.get('https://estrelabet.com/ptb/games/detail/casino/normal/7787')
-        WebDriverWait(driver, 30).until(
-            EC.presence_of_element_located((By.ID, 'gm-frm'))
-        )
-        sleep(5)
-        iframe = driver.find_element(By.ID, 'gm-frm')
-        driver.switch_to.frame(iframe)
-        sleep(5)
-        resultados = [float(n) for n in driver.find_element(By.CLASS_NAME, 'result-history').text.replace('x', '').split('\n')][:10]
-        if verificar_estrategia(resultados):
-            print(f'estrategia ok -> {resultados[:4]}')
-        return resultados
-    finally:
+        data = driver.title
         driver.quit()
+        
+        # Referência para o banco de dados
+        ref = db.reference('resultados')
+        ref.push({'resultado': data})
+
+        return jsonify({'data': data})
+    
+    except Exception as e:
+        print(f"Erro durante a execução do Selenium: {e}")
+        return jsonify({'error': str(e)})
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=8080)
