@@ -3,12 +3,7 @@ import json
 import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import db
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
-from webdriver_manager.chrome import ChromeDriverManager
 from flask import Flask, jsonify
-from time import sleep
 
 app = Flask(__name__)
 
@@ -22,27 +17,10 @@ firebase_admin.initialize_app(cred, {
 
 @app.route('/')
 def index():
-    options = Options()
-    options.add_argument('--headless')
-    options.add_argument('--disable-logging')
-    options.add_argument('--no-sandbox')
-    options.add_argument('--disable-dev-shm-usage')
-
     try:
-        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
-        driver.get('https://estrelabet.com/ptb/bet/main')
-        sleep(10)
-        data = driver.title
-        driver.quit()
-        
-        # Referência para o banco de dados
-        ref = db.reference('resultados')
-        ref.push({'resultado': data})
-
-        return jsonify({'data': data})
-    
+        # Aqui você pode adicionar qualquer lógica que desejar para a API
+        return jsonify({'message': 'API funcionando corretamente!'})
     except Exception as e:
-        print(f"Erro durante a execução do Selenium: {e}")
         return jsonify({'error': str(e)})
 
 if __name__ == '__main__':
