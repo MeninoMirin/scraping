@@ -26,16 +26,6 @@ firebase_creds = {
     "universe_domain": "googleapis.com"
 }
 
-# Inicializar o Firebase
-try:
-    cred = credentials.Certificate(firebase_creds)
-    firebase_admin.initialize_app(cred, {
-        'databaseURL': 'https://banco-8c10d-default-rtdb.firebaseio.com/'
-    })
-    print("Firebase inicializado com sucesso")
-except Exception as e:
-    print(f"Erro ao inicializar o Firebase: {e}")
-
 @app.route('/')
 def index():
     options = Options()
@@ -50,11 +40,11 @@ def index():
         sleep(10)
         data = driver.title
         driver.quit()
-        print("Dados obtidos com sucesso")
         
         # Referência para o banco de dados
         ref = db.reference('resultados')
         ref.push({'resultado': data})
+
         return jsonify({'data': data})
     
     except Exception as e:
